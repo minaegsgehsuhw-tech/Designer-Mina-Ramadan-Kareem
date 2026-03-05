@@ -42,6 +42,30 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  app.post("/api/admin/add-prize", (req, res) => {
+    const { password, prizeName, limit } = req.body;
+    if (password !== "minaa52s") {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    try {
+      db.prepare("INSERT INTO prize_counts (prize_name, current_count, max_limit) VALUES (?, 0, ?)").run(prizeName, limit);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(400).json({ error: "Prize already exists" });
+    }
+  });
+
+  app.post("/api/admin/delete-prize", (req, res) => {
+    const { password, prizeName } = req.body;
+    if (password !== "minaa52s") {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    db.prepare("DELETE FROM prize_counts WHERE prize_name = ?").run(prizeName);
+    res.json({ success: true });
+  });
+
   app.post("/api/admin/reset-count", (req, res) => {
     const { password, prizeName } = req.body;
     if (password !== "minaa52s") {
@@ -53,18 +77,18 @@ async function startServer() {
   });
 
   app.post("/api/claim-prize", (req, res) => {
-    const { prizeType } = req.body;
+    // Get all prizes that still have availability
+    const availablePrizes = db.prepare("SELECT * FROM prize_counts WHERE current_count < max_limit").all() as any[];
     
-    if (prizeType === 'capcut' || prizeType === 'office') {
-      const row = db.prepare("SELECT * FROM prize_counts WHERE prize_name = ?").get(prizeType) as any;
+    if (availablePrizes.length > 0) {
+      // Pick a random prize from available ones
+      const selectedPrize = availablePrizes[Math.floor(Math.random() * availablePrizes.length)];
       
-      if (row && row.current_count < row.max_limit) {
-        db.prepare("UPDATE prize_counts SET current_count = current_count + 1 WHERE prize_name = ?").run(prizeType);
-        return res.json({ success: true, prize: prizeType });
-      }
+      db.prepare("UPDATE prize_counts SET current_count = current_count + 1 WHERE prize_name = ?").run(selectedPrize.prize_name);
+      return res.json({ success: true, prize: selectedPrize.prize_name });
     }
 
-    // Fallback to discount code
+    // Fallback to discount code if no prizes are available
     const discounts = [5, 10, 15];
     const randomDiscount = discounts[Math.floor(Math.random() * discounts.length)];
     res.json({ success: true, prize: `discount_${randomDiscount}` });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Lock, Settings, RefreshCw, Plus, Minus, ShieldCheck } from 'lucide-react';
+import { Lock, Settings, RefreshCw, Plus, Minus, ShieldCheck, X } from 'lucide-react';
 
 interface PrizeStatus {
   prize_name: string;
@@ -14,6 +14,8 @@ export default function AdminPanel() {
   const [prizes, setPrizes] = useState<PrizeStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [newPrizeName, setNewPrizeName] = useState('');
+  const [newPrizeLimit, setNewPrizeLimit] = useState(10);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +37,41 @@ export default function AdminPanel() {
       setError('فشل في جلب البيانات');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addPrize = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPrizeName) return;
+    try {
+      const res = await fetch('/api/admin/add-prize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, prizeName: newPrizeName, limit: newPrizeLimit })
+      });
+      if (res.ok) {
+        setNewPrizeName('');
+        fetchStatus();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'فشل في إضافة الاشتراك');
+      }
+    } catch (err) {
+      setError('فشل في إضافة الاشتراك');
+    }
+  };
+
+  const deletePrize = async (prizeName: string) => {
+    if (!window.confirm(`هل أنت متأكد من حذف اشتراك "${prizeName}" نهائياً؟`)) return;
+    try {
+      await fetch('/api/admin/delete-prize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, prizeName })
+      });
+      fetchStatus();
+    } catch (err) {
+      setError('فشل في حذف الاشتراك');
     }
   };
 
@@ -111,27 +148,64 @@ export default function AdminPanel() {
         </button>
       </div>
 
+      <div className="mb-10 ramadan-card border-ramadan-gold/20">
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <Plus size={20} /> إضافة نوع اشتراك جديد
+        </h3>
+        <form onSubmit={addPrize} className="flex flex-wrap gap-4">
+          <input
+            type="text"
+            value={newPrizeName}
+            onChange={(e) => setNewPrizeName(e.target.value)}
+            placeholder="اسم الاشتراك (مثلاً: netflix)"
+            className="ramadan-input flex-1 min-w-[200px]"
+          />
+          <input
+            type="number"
+            value={newPrizeLimit}
+            onChange={(e) => setNewPrizeLimit(parseInt(e.target.value))}
+            placeholder="العدد المتاح"
+            className="ramadan-input w-32"
+          />
+          <button type="submit" className="ramadan-button">
+            إضافة
+          </button>
+        </form>
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {prizes.map((p) => (
-          <div key={p.prize_name} className="ramadan-card border-white/10">
+          <div key={p.prize_name} className="ramadan-card border-white/10 relative group">
+            <button 
+              onClick={() => deletePrize(p.prize_name)}
+              className="absolute top-2 left-2 p-1 text-red-500 opacity-0 group-hover:opacity-50 hover:opacity-100 transition-opacity"
+              title="حذف هذا النوع"
+            >
+              <X size={16} />
+            </button>
             <div className="flex justify-between items-start mb-6">
               <h3 className="text-2xl font-bold capitalize">
-                {p.prize_name === 'capcut' ? 'كاب كات' : 'أوفيس 365'}
+                {p.prize_name === 'capcut' ? 'كاب كات' : p.prize_name === 'office' ? 'أوفيس 365' : p.prize_name}
               </h3>
               <Settings className="opacity-30" />
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-white/5 p-4 rounded-xl text-center">
-                <p className="text-xs opacity-50 mb-1">تم سحب</p>
+                <p className="text-xs opacity-50 mb-1">حسابات انسحبت</p>
                 <p className="text-3xl font-bold text-ramadan-gold">{p.current_count}</p>
               </div>
               <div className="bg-white/5 p-4 rounded-xl text-center">
-                <p className="text-xs opacity-50 mb-1">المتبقي</p>
-                <p className="text-3xl font-bold text-green-500">
-                  {Math.max(0, p.max_limit - p.current_count)}
-                </p>
+                <p className="text-xs opacity-50 mb-1">إجمالي الحسابات</p>
+                <p className="text-3xl font-bold text-blue-400">{p.max_limit}</p>
               </div>
+            </div>
+
+            <div className="bg-green-500/10 p-3 rounded-lg text-center mb-6">
+              <p className="text-sm text-green-500 font-bold">
+                المتبقي حالياً: {Math.max(0, p.max_limit - p.current_count)} حساب
+              </p>
             </div>
 
             <div className="space-y-4">

@@ -87,9 +87,12 @@ export default function LuckGame({ userCode }: LuckGameProps) {
         let prizeName = '';
         if (finalPrize === 'capcut') prizeName = 'اشتراك كاب كات مجاني';
         else if (finalPrize === 'office') prizeName = 'اشتراك اوفيس مجاني';
-        else {
-          const discountVal = finalPrize.includes('_') ? finalPrize.split('_')[1] : '10';
+        else if (finalPrize.startsWith('discount_')) {
+          const discountVal = finalPrize.split('_')[1];
           prizeName = `كود خصم ${discountVal}%`;
+        } else {
+          // For any other custom prize added via admin panel
+          prizeName = `اشتراك ${finalPrize} مجاني`;
         }
 
         setPrize(prizeName);

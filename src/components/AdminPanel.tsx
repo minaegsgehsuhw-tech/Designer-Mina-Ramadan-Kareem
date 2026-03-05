@@ -19,7 +19,7 @@ export default function AdminPanel() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'minaa52s') {
+    if (password === 'a52s') {
       setIsAuthenticated(true);
       fetchStatus();
     } else {

@@ -34,7 +34,7 @@ async function startServer() {
 
   app.post("/api/admin/update-limit", (req, res) => {
     const { password, prizeName, newLimit } = req.body;
-    if (password !== "minaa52s") {
+    if (password !== "a52s") {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
@@ -44,7 +44,7 @@ async function startServer() {
 
   app.post("/api/admin/add-prize", (req, res) => {
     const { password, prizeName, limit } = req.body;
-    if (password !== "minaa52s") {
+    if (password !== "a52s") {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
@@ -58,7 +58,7 @@ async function startServer() {
 
   app.post("/api/admin/delete-prize", (req, res) => {
     const { password, prizeName } = req.body;
-    if (password !== "minaa52s") {
+    if (password !== "a52s") {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
@@ -68,7 +68,7 @@ async function startServer() {
 
   app.post("/api/admin/reset-count", (req, res) => {
     const { password, prizeName } = req.body;
-    if (password !== "minaa52s") {
+    if (password !== "a52s") {
       return res.status(401).json({ error: "Unauthorized" });
     }
     

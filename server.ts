@@ -13,6 +13,21 @@ db.exec(`
     max_limit INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS offers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT,
+    programs TEXT,
+    discount_code TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS contest_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT,
+    image_data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   INSERT OR IGNORE INTO prize_counts (prize_name, current_count, max_limit) VALUES ('capcut', 0, 6);
   INSERT OR IGNORE INTO prize_counts (prize_name, current_count, max_limit) VALUES ('office', 0, 10);
   
@@ -30,6 +45,31 @@ async function startServer() {
   app.get("/api/prize-status", (req, res) => {
     const counts = db.prepare("SELECT * FROM prize_counts").all();
     res.json(counts);
+  });
+
+  app.get("/api/admin/all-data", (req, res) => {
+    const { password } = req.query;
+    if (password !== "a52s") {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    const prizes = db.prepare("SELECT * FROM prize_counts").all();
+    const offers = db.prepare("SELECT * FROM offers ORDER BY created_at DESC").all();
+    const contest = db.prepare("SELECT * FROM contest_entries ORDER BY created_at DESC").all();
+    
+    res.json({ prizes, offers, contest });
+  });
+
+  app.post("/api/submit-offer", (req, res) => {
+    const { phone, programs, discountCode } = req.body;
+    db.prepare("INSERT INTO offers (phone, programs, discount_code) VALUES (?, ?, ?)").run(phone, programs.join(', '), discountCode || '');
+    res.json({ success: true });
+  });
+
+  app.post("/api/submit-contest", (req, res) => {
+    const { phone, image } = req.body;
+    db.prepare("INSERT INTO contest_entries (phone, image_data) VALUES (?, ?)").run(phone, image);
+    res.json({ success: true });
   });
 
   app.post("/api/admin/update-limit", (req, res) => {
@@ -63,6 +103,24 @@ async function startServer() {
     }
     
     db.prepare("DELETE FROM prize_counts WHERE prize_name = ?").run(prizeName);
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/delete-offer", (req, res) => {
+    const { password, id } = req.body;
+    if (password !== "a52s") {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    db.prepare("DELETE FROM offers WHERE id = ?").run(id);
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/delete-contest", (req, res) => {
+    const { password, id } = req.body;
+    if (password !== "a52s") {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    db.prepare("DELETE FROM contest_entries WHERE id = ?").run(id);
     res.json({ success: true });
   });
 

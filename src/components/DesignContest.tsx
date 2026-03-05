@@ -26,6 +26,13 @@ export default function DesignContest() {
     setIsSubmitting(true);
 
     try {
+      // Save to local database
+      await fetch('/api/submit-contest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, image })
+      });
+
       const result = await emailjs.send(
         'service_2zi1i8v',
         'template_ycwdam7',

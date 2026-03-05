@@ -6,6 +6,10 @@ import LuckGame from './components/LuckGame';
 import DesignContest from './components/DesignContest';
 import RamadanOffers from './components/RamadanOffers';
 import AdminPanel from './components/AdminPanel';
+import emailjs from 'emailjs-com';
+
+// Initialize EmailJS
+emailjs.init('Ahy3hTsRhql3F-bvj');
 
 type Page = 'home' | 'contest' | 'offers' | 'admin';
 

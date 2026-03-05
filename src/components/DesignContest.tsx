@@ -26,17 +26,20 @@ export default function DesignContest() {
     setIsSubmitting(true);
 
     try {
-      await emailjs.send(
-        'fU2dnpaHIDYKOww954ig',
-        'template_contest',
+      const result = await emailjs.send(
+        'service_2zi1i8v',
+        'template_ycwdam7',
         {
+          message: `مشاركة في مسابقة التصميم\nرقم الهاتف: ${phone}`,
           phone: phone,
-          design_image: image, // Note: EmailJS has limits on attachment size, usually better to send a link or small base64
+          design_image: image,
         },
         'Ahy3hTsRhql3F-bvj'
       );
+      console.log('EmailJS Success:', result.text);
       setSubmitted(true);
     } catch (error) {
+      console.error('EmailJS Error:', error);
       setSubmitted(true);
     } finally {
       setIsSubmitting(false);

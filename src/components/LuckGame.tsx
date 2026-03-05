@@ -45,6 +45,8 @@ export default function LuckGame({ userCode }: LuckGameProps) {
     if (isSpinning || prize) return;
     setIsSpinning(true);
     
+    let finalPrize = 'discount_10'; // Default fallback
+    
     // Call API to determine prize based on limits
     try {
       const response = await fetch('/api/claim-prize', {
@@ -52,48 +54,55 @@ export default function LuckGame({ userCode }: LuckGameProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prizeType: Math.random() > 0.5 ? 'capcut' : 'office' })
       });
-      const data = await response.json();
-      const finalPrize = data.prize; // 'capcut', 'office', or 'discount_X'
-
-      let currentIdx = 0;
-      const spins = 30 + Math.floor(Math.random() * 10);
       
-      const interval = setInterval(() => {
-        setActiveIndex(currentIdx % ITEMS.length);
-        currentIdx++;
-        
-        if (currentIdx >= spins) {
-          clearInterval(interval);
-          
-          // Find index of the prize to stop on
-          let targetIdx = -1;
-          if (finalPrize === 'capcut') targetIdx = ITEMS.findIndex(i => i.id === 'capcut');
-          else if (finalPrize === 'office') targetIdx = ITEMS.findIndex(i => i.id === 'office');
-          else targetIdx = ITEMS.findIndex(i => i.id === 'discounts');
-
-          setActiveIndex(targetIdx);
-          setIsSpinning(false);
-          
-          let prizeName = '';
-          if (finalPrize === 'capcut') prizeName = 'اشتراك كاب كات مجاني';
-          else if (finalPrize === 'office') prizeName = 'اشتراك اوفيس مجاني';
-          else prizeName = `كود خصم ${finalPrize.split('_')[1]}%`;
-
-          setPrize(prizeName);
-          localStorage.setItem('ramadan_prize', prizeName);
-          setShowPrizeModal(true);
-          confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#D4AF37', '#F59E0B', '#FFFFFF']
-          });
-        }
-      }, 100);
+      if (response.ok) {
+        const data = await response.json();
+        finalPrize = data.prize;
+        console.log('Prize selected from server:', finalPrize);
+      }
     } catch (error) {
-      console.error(error);
-      setIsSpinning(false);
+      console.error('Prize API error:', error);
+      // Continue with fallback
     }
+
+    let currentIdx = 0;
+    const spins = 30 + Math.floor(Math.random() * 10);
+    
+    const interval = setInterval(() => {
+      setActiveIndex(currentIdx % ITEMS.length);
+      currentIdx++;
+      
+      if (currentIdx >= spins) {
+        clearInterval(interval);
+        
+        // Find index of the prize to stop on
+        let targetIdx = -1;
+        if (finalPrize === 'capcut') targetIdx = ITEMS.findIndex(i => i.id === 'capcut');
+        else if (finalPrize === 'office') targetIdx = ITEMS.findIndex(i => i.id === 'office');
+        else targetIdx = ITEMS.findIndex(i => i.id === 'discounts');
+
+        setActiveIndex(targetIdx);
+        setIsSpinning(false);
+        
+        let prizeName = '';
+        if (finalPrize === 'capcut') prizeName = 'اشتراك كاب كات مجاني';
+        else if (finalPrize === 'office') prizeName = 'اشتراك اوفيس مجاني';
+        else {
+          const discountVal = finalPrize.includes('_') ? finalPrize.split('_')[1] : '10';
+          prizeName = `كود خصم ${discountVal}%`;
+        }
+
+        setPrize(prizeName);
+        localStorage.setItem('ramadan_prize', prizeName);
+        setShowPrizeModal(true);
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#D4AF37', '#F59E0B', '#FFFFFF']
+        });
+      }
+    }, 100);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,22 +111,25 @@ export default function LuckGame({ userCode }: LuckGameProps) {
     setIsSubmitting(true);
 
     try {
-      await emailjs.send(
-        'fU2dnpaHIDYKOww954ig',
-        'template_prize',
+      const result = await emailjs.send(
+        'service_2zi1i8v',
+        'template_ycwdam7',
         {
+          message: `فوز بجائزة: ${prize}\nكود المستخدم: ${userCode}\nرقم الهاتف: ${phone}`,
           user_code: userCode,
           prize: prize,
           phone: phone,
         },
         'Ahy3hTsRhql3F-bvj'
       );
+      console.log('EmailJS Success:', result.text);
       setMessage('سيتم مراجعة هديتك وسنتواصل معك ونسلمك الهدية');
       localStorage.setItem('ramadan_claim_status', 'سيتم مراجعة هديتك وسنتواصل معك ونسلمك الهدية');
       setHasClaimed(true);
       setShowForm(false);
     } catch (error) {
-      // Even if email fails, show success message to user as per requirement
+      console.error('EmailJS Error:', error);
+      // Still show success to user but log the error
       setMessage('سيتم مراجعة هديتك وسنتواصل معك ونسلمك الهدية');
       localStorage.setItem('ramadan_claim_status', 'سيتم مراجعة هديتك وسنتواصل معك ونسلمك الهدية');
       setHasClaimed(true);

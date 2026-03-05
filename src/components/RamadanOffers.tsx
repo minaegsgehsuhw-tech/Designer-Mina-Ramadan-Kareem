@@ -42,19 +42,22 @@ export default function RamadanOffers() {
     setIsSubmitting(true);
 
     try {
-      await emailjs.send(
-        'fU2dnpaHIDYKOww954ig',
-        'template_offer',
+      const result = await emailjs.send(
+        'service_2zi1i8v',
+        'template_ycwdam7',
         {
+          message: `طلب عرض رمضان:\nالبرامج: ${selectedOffers.join(', ')}\nرقم الهاتف: ${phone}\nكود الخصم: ${discountCode || 'لا يوجد'}`,
           program: selectedOffers.join(', '),
           phone: phone,
           discount_code: discountCode || 'لا يوجد',
         },
         'Ahy3hTsRhql3F-bvj'
       );
+      console.log('EmailJS Success:', result.text);
       setSubmitted(true);
       setShowOrderForm(false);
     } catch (error) {
+      console.error('EmailJS Error:', error);
       setSubmitted(true);
       setShowOrderForm(false);
     } finally {

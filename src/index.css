@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ramadan-gold: #D4AF37;
+  --color-ramadan-blue: #0F172A;
+  --color-ramadan-purple: #2E1065;
+  --color-ramadan-accent: #F59E0B;
+}
+
+body {
+  @apply bg-ramadan-blue text-white font-sans;
+  background-image: radial-gradient(circle at top right, rgba(212, 175, 55, 0.1), transparent),
+                    radial-gradient(circle at bottom left, rgba(46, 16, 101, 0.5), transparent);
+  min-height: 100vh;
+}
+
+.ramadan-card {
+  @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl;
+}
+
+.ramadan-button {
+  @apply bg-ramadan-gold hover:bg-ramadan-accent text-ramadan-blue font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg active:scale-95;
+}
+
+.ramadan-input {
+  @apply bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-ramadan-gold transition-colors;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+

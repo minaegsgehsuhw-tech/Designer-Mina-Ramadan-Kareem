@@ -47,18 +47,20 @@ export default function AdminPanel() {
 
   const fetchStatus = async () => {
     setLoading(true);
+    setError('');
     try {
-      const res = await fetch(`/api/admin/all-data?password=${password}`);
-      const data = await res.json();
-      if (res.ok) {
-        setPrizes(data.prizes);
-        setOffers(data.offers);
-        setContest(data.contest);
-      } else {
-        setError(data.error || 'فشل في جلب البيانات');
+      const res = await fetch(`/api/admin/all-data?password=${encodeURIComponent(password)}`);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${res.status}`);
       }
-    } catch (err) {
-      setError('فشل في جلب البيانات');
+      const data = await res.json();
+      setPrizes(data.prizes || []);
+      setOffers(data.offers || []);
+      setContest(data.contest || []);
+    } catch (err: any) {
+      console.error("Fetch error:", err);
+      setError(err.message || 'فشل في جلب البيانات. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.');
     } finally {
       setLoading(false);
     }
@@ -140,6 +142,19 @@ export default function AdminPanel() {
     }
   };
 
+  const updateCurrentCount = async (prizeName: string, newCount: number) => {
+    try {
+      await fetch('/api/admin/update-current-count', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, prizeName, newCount })
+      });
+      fetchStatus();
+    } catch (err) {
+      setError('فشل في تحديث عدد المسحوب');
+    }
+  };
+
   const resetCount = async (prizeName: string) => {
     if (!window.confirm('هل أنت متأكد من إعادة تعيين عدد السحوبات لهذا الاشتراك؟')) return;
     try {
@@ -199,6 +214,18 @@ export default function AdminPanel() {
           <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-center">
+          <p className="text-red-500 mb-3">{error}</p>
+          <button 
+            onClick={fetchStatus}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 mx-auto"
+          >
+            <RefreshCw size={16} /> إعادة المحاولة
+          </button>
+        </div>
+      )}
 
       <div className="flex gap-4 mb-8 border-b border-white/10 pb-4 overflow-x-auto">
         <button
@@ -270,6 +297,22 @@ export default function AdminPanel() {
                   <div className="bg-white/5 p-4 rounded-xl text-center">
                     <p className="text-xs opacity-50 mb-1">حسابات انسحبت</p>
                     <p className="text-3xl font-bold text-ramadan-gold">{p.current_count}</p>
+                    <div className="flex justify-center gap-2 mt-2">
+                      <button 
+                        onClick={() => updateCurrentCount(p.prize_name, p.current_count - 1)}
+                        className="p-1 bg-white/10 hover:bg-white/20 rounded text-xs"
+                        title="تقليل عدد المسحوب"
+                      >
+                        -1
+                      </button>
+                      <button 
+                        onClick={() => updateCurrentCount(p.prize_name, p.current_count + 1)}
+                        className="p-1 bg-white/10 hover:bg-white/20 rounded text-xs"
+                        title="زيادة عدد المسحوب"
+                      >
+                        +1
+                      </button>
+                    </div>
                   </div>
                   <div className="bg-white/5 p-4 rounded-xl text-center">
                     <p className="text-xs opacity-50 mb-1">إجمالي الحسابات</p>
